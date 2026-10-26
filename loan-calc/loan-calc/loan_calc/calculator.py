@@ -6,7 +6,7 @@ DEFAULT_CURRENCY = "INR"
 
 
 def _monthly_rate(annual_rate):
-    r = round(annual_rate / 1200, 4)
+    r = annual_rate / 1200
     return r
 
 
@@ -44,9 +44,12 @@ def total_payment(principal: float, annual_rate: float, tenure_months: int) -> f
         tenure_months: The loan tenure in months.
 
     Returns:
-        The total payment (EMI * tenure_months), rounded to 2 decimal places.
+        The total payment, computed by summing the month-by-month
+        amortisation schedule (which absorbs rounding residuals into the
+        final instalment), rounded to 2 decimal places.
     """
-    return round(emi(principal, annual_rate, tenure_months) * tenure_months, 2)
+    sched = amortisation_schedule(principal, annual_rate, tenure_months)
+    return round(sum(row["emi"] for row in sched), 2)
 
 
 def total_interest(principal: float, annual_rate: float, tenure_months: int) -> float:
@@ -142,7 +145,10 @@ def remaining_tenure(balance: float, annual_rate: float, instalment: float) -> i
     if instalment <= balance * r:
         raise ValueError("instalment too small to repay the loan")
     n = -math.log(1 - balance * r / instalment) / math.log(1 + r)
-    return math.ceil(n)
+    # Round off tiny floating-point noise (e.g. 24.000015 due to the
+    # instalment being rounded to cents) before rounding up, so an
+    # effectively whole number of months isn't bumped up by one.
+    return math.ceil(round(n, 4))
 
 
 def prepayment_savings(
