@@ -22,32 +22,28 @@ that suite exposed.
 ## Repository layout
 
 ```
-.
-├── README.md                         ← you are here
-├── PROMPT_LOG.md                     ← prompts used with aXet
-└── loan-calc/loan-calc/
-    ├── cli.py                        ← command-line entry point
-    ├── requirements.txt
-    ├── loan_calc/
-    │   ├── __init__.py
-    │   ├── calculator.py             ← all the loan maths
-    │   └── ARCHITECTURE.md           ← what each function does and how they connect
-    └── tests/
-        └── test_calculator.py        ← pytest suite (54 tests)
+├── README.md              ← you are here
+├── ARCHITECTURE.md        ← what each function does and how they connect
+├── PROMPT_LOG.md          ← prompts used with aXet
+├── requirements.txt
+├── pyproject.toml         ← pytest settings
+├── cli.py                 ← command-line entry point
+├── loan_calc/
+│   ├── __init__.py
+│   └── calculator.py      ← all the loan maths
+└── test/
+    └── test_calculator.py ← pytest suite (54 tests)
 ```
 
 ## Setup
 
 ```bash
-cd loan-calc/loan-calc
 python -m venv .venv
 .venv\Scripts\activate            # macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
 ## Run the tests
-
-From `loan-calc/loan-calc`:
 
 ```bash
 pytest --cov=loan_calc --cov-report=term-missing
@@ -74,8 +70,6 @@ The first command prints an EMI of `₹8,997.26`.
 | 1 | `amortisation_schedule()` | Schedule one row short; empty for a 1-month loan; final balance never reaches 0 | Loop used `range(1, tenure_months)` | `range(1, tenure_months + 1)` | `5669b5c` |
 | 2 | `remaining_tenure()` | `prepayment_savings()` raised "instalment too small" for normal loans | Monthly rate computed as `annual_rate / 100` instead of `/ 1200` | Use the shared `_monthly_rate()` helper | `3c02578` |
 | 3 | `_monthly_rate()` | Wrong EMIs for most rates, e.g. ₹10L @ 10% / 120 months gave ₹13,192.93 instead of ₹13,215.07 | Monthly rate rounded to 4 d.p. before compounding | Remove the early `round()`; round only final money values | `5d83f0b`* |
-
-\* Commit `5d83f0b` also contains two smaller fixes found by the tests (not seeded bugs):
 
 - `total_payment()` now sums the amortisation schedule instead of `EMI × months`, so a 0% loan no longer shows `-₹0.04` total interest.
 - `remaining_tenure()` rounds `n` to 4 d.p. before `ceil()`, so floating-point noise (e.g. `19.000012`) no longer adds an extra month.
