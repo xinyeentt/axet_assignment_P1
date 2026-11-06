@@ -72,14 +72,13 @@ class TestEmi:
         assert result > 0
         assert math_is_finite(result)
 
-    def test_assignment_emi_value(self):
-        """Sanity check against the standard EMI formula for a 10,000
-        principal at 9% p.a. over 240 months. Expected EMI is
-        approximately 89.97 (NOT 8,997 - that figure likely assumes a
-        principal of 1,000,000 or contains a typo. Confirm with the
-        assignment author if 8,997 was really intended)."""
-        result = emi(10_000, 9, 240)
-        assert result == pytest.approx(89.97, abs=1.0)
+    def test_assignment_acceptance_emi(self):
+        """"₹10,00,000" in the assignment is Indian notation for 10 lakh
+        = 1,000,000, not 10,000. Verify EMI for a 1,000,000 principal at
+        9% p.a. over 240 months matches the assignment's acceptance
+        value of approximately 8,997."""
+        result = emi(1_000_000, 9, 240)
+        assert result == pytest.approx(8997, abs=1)
 
 
 def math_is_finite(value: float) -> bool:
@@ -93,9 +92,9 @@ def math_is_finite(value: float) -> bool:
 
 class TestTotalPaymentAndInterest:
     def test_total_payment_standard(self):
-        assert total_payment(100000, 10, 12) == pytest.approx(
-            emi(100000, 10, 12) * 12, abs=0.01
-        )
+        sched = amortisation_schedule(100000, 10, 12)
+        expected = sum(row["emi"] for row in sched)
+        assert total_payment(100000, 10, 12) == pytest.approx(expected, abs=0.01)
 
     def test_total_interest_zero_rate(self):
         """With 0% interest, total interest should be exactly 0."""
